@@ -1,4 +1,4 @@
-﻿namespace SeniorCitizenCenterMod {
+﻿namespace DormitoryMod {
     public struct NumWorkers {
 
         public int maxNumUneducatedWorkers;

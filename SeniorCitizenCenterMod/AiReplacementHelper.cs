@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace SeniorCitizenCenterMod {
+namespace DormitoryMod {
     public class AiReplacementHelper {
         private const bool LOG_AI_REPLACEMENT = true;
 
@@ -25,8 +25,8 @@ namespace SeniorCitizenCenterMod {
             }
 
 
-            if (building.m_buildingAI is NursingHomeAi) {
-                Logger.logInfo(LOG_AI_REPLACEMENT, "AiReplacementHelper.replaceBuildingAi -- Did not replace AI for {0}, building already running the NursingHomeAi", building.name);
+            if (building.m_buildingAI is DormitoryAi) {
+                Logger.logInfo(LOG_AI_REPLACEMENT, "AiReplacementHelper.replaceBuildingAi -- Did not replace AI for {0}, building already running the DormitoryAi", building.name);
                 return false;
             }
 

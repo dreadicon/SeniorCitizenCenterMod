@@ -7,8 +7,8 @@ using System.Threading;
 using ColossalFramework;
 using UnityEngine;
 
-namespace SeniorCitizenCenterMod {
-    public class NursingHomeInitializer : MonoBehaviour {
+namespace DormitoryMod {
+    public class DormitoryInitializer : MonoBehaviour {
         private const bool LOG_INITIALIZER = true;
 
         public const int LOADED_LEVEL_GAME = 6;
@@ -33,17 +33,17 @@ namespace SeniorCitizenCenterMod {
         }
 
         private void Start() {
-            Logger.logInfo(LOG_INITIALIZER, "NursingHomeInitializer Starting");
+            Logger.logInfo(LOG_INITIALIZER, "DormitoryInitializer Starting");
         }
 
         public void OnLevelWasLoaded(int level) {
             this.loadedLevel = level;
-            Logger.logInfo(LOG_INITIALIZER, "NursingHomeInitializer.OnLevelWasLoaded: {0}", level);
+            Logger.logInfo(LOG_INITIALIZER, "DormitoryInitializer.OnLevelWasLoaded: {0}", level);
         }
 
         public void OnLevelUnloading() {
             this.loadedLevel = -1;
-            Logger.logInfo(LOG_INITIALIZER, "NursingHomeInitializer.OnLevelUnloading: {0}", this.loadedLevel);
+            Logger.logInfo(LOG_INITIALIZER, "DormitoryInitializer.OnLevelUnloading: {0}", this.loadedLevel);
         }
 
         public int getLoadedLevel() {
@@ -63,7 +63,7 @@ namespace SeniorCitizenCenterMod {
         private void attemptInitialization() {
             // Make sure not attempting initilization after loading has already completed -- This means the mod may not function properly, but it won't waste resources continuing to try
             if (Singleton<LoadingManager>.instance.m_loadingComplete) {
-                Logger.logError("NursingHomeInitializer.attemptInitialization -- *** NURSING HOMES FUNCTIONALITY DID NOT INITLIZIE PRIOR TO GAME LOADING -- THE SENIOR CITIZEN CENTER MOD MAY NOT FUNCTION PROPERLY ***");
+                Logger.logError("DormitoryInitializer.attemptInitialization -- *** NURSING HOMES FUNCTIONALITY DID NOT INITLIZIE PRIOR TO GAME LOADING -- THE SENIOR CITIZEN CENTER MOD MAY NOT FUNCTION PROPERLY ***");
                 // Set initilized so it won't keep trying
                 this.setInitialized();
             }
@@ -74,7 +74,7 @@ namespace SeniorCitizenCenterMod {
                 return;
             }
 
-            // Wait for the Medical Clinic or other HospitalAI Building to load since all new Nursing Homes will copy its values
+            // Wait for the Medical Clinic or other HospitalAI Building to load since all new Dormitories will copy its values
             BuildingInfo medicalBuildingInfo = this.findMedicalBuildingInfo();
             if (medicalBuildingInfo == null) {
                 this.attemptingInitialization = 0;
@@ -82,16 +82,16 @@ namespace SeniorCitizenCenterMod {
             }
 
             // Start loading
-            Logger.logInfo(LOG_INITIALIZER, "NursingHomeInitializer.attemptInitialization -- Attempting Initialization");
+            Logger.logInfo(LOG_INITIALIZER, "DormitoryInitializer.attemptInitialization -- Attempting Initialization");
             Singleton<LoadingManager>.instance.QueueLoadingAction(ActionWrapper(() => {
                 try {
                     if (this.loadedLevel == LOADED_LEVEL_GAME) {
-                        // Reset the PanelHelper and initilize the Healthcare Menu
+                        // Reset the PanelHelper and initilize the Education Menu
                         PanelHelper.reset();
-                        this.StartCoroutine(this.initHealthcareMenu());
+                        this.StartCoroutine(this.initEducationMenu());
                     }
                     if (this.loadedLevel == LOADED_LEVEL_GAME || this.loadedLevel == LOADED_LEVEL_ASSET_EDITOR) {
-                        this.StartCoroutine(this.initNursingHomes(medicalBuildingInfo));
+                        this.StartCoroutine(this.initDormitories(medicalBuildingInfo));
                         AddQueuedActionsToLoadingQueue();
                     }
                 } catch (Exception e) {
@@ -122,11 +122,11 @@ namespace SeniorCitizenCenterMod {
             }
 
             // Attempt to find a suitable medical building that can be used as a template
-            Logger.logInfo(LOG_INITIALIZER, "NursingHomeInitializer.findMedicalBuildingInfo -- Couldn't find the Medical Clinic asset after {0} tries, attempting to search for any Building with a HospitalAi", this.numTimesSearchedForMedicalClinic);
+            Logger.logInfo(LOG_INITIALIZER, "DormitoryInitializer.findMedicalBuildingInfo -- Couldn't find the Medical Clinic asset after {0} tries, attempting to search for any Building with a HospitalAi", this.numTimesSearchedForMedicalClinic);
             for (uint i=0; (long) PrefabCollection<BuildingInfo>.LoadedCount() > (long) i; ++i) {
                 BuildingInfo buildingInfo = PrefabCollection<BuildingInfo>.GetLoaded(i);
-                if (buildingInfo != null && buildingInfo.GetService() == ItemClass.Service.HealthCare && !buildingInfo.m_buildingAI.IsWonder() && buildingInfo.m_buildingAI is HospitalAI) {
-                    Logger.logInfo(LOG_INITIALIZER, "NursingHomeInitializer.findMedicalBuildingInfo -- Using the {0} as a template instead of the Medical Clinic", buildingInfo);
+                if (buildingInfo != null && buildingInfo.GetService() == ItemClass.Service.Education && !buildingInfo.m_buildingAI.IsWonder() && buildingInfo.m_buildingAI is HospitalAI) {
+                    Logger.logInfo(LOG_INITIALIZER, "DormitoryInitializer.findMedicalBuildingInfo -- Using the {0} as a template instead of the Medical Clinic", buildingInfo);
                     return buildingInfo;
                 }
             }
@@ -135,28 +135,28 @@ namespace SeniorCitizenCenterMod {
             return null;
         }
 
-        private IEnumerator initHealthcareMenu() {
+        private IEnumerator initEducationMenu() {
             // Need to continue beyond loading complete now
             int i = 0;
             while (!Singleton<LoadingManager>.instance.m_loadingComplete || i++ < 25) {
-                if (PanelHelper.initCustomHealthcareGroupPanel()) {
+                if (PanelHelper.initCustomEducationGroupPanel()) {
                     break;
                 }
                 yield return new WaitForEndOfFrame();
             }
         }
 
-        private IEnumerator initNursingHomes(BuildingInfo buildingToCopyFrom) {
-            float capcityModifier = SeniorCitizenCenterMod.getInstance().getOptionsManager().getCapacityModifier();
+        private IEnumerator initDormitories(BuildingInfo buildingToCopyFrom) {
+            float capcityModifier = DormitoryMod.getInstance().getOptionsManager().getCapacityModifier();
             uint index = 0U;
             while (!Singleton<LoadingManager>.instance.m_loadingComplete) {
                 for (; PrefabCollection<BuildingInfo>.LoadedCount() > index; ++index) {
                     BuildingInfo buildingInfo = PrefabCollection<BuildingInfo>.GetLoaded(index);
                     if (buildingInfo != null && buildingInfo.name.EndsWith("_Data") && buildingInfo.name.Contains("NH123")) {
-                        this.aiReplacementHelper.replaceBuildingAi<NursingHomeAi>(buildingInfo, buildingToCopyFrom);
+                        this.aiReplacementHelper.replaceBuildingAi<DormitoryAi>(buildingInfo, buildingToCopyFrom);
                     }
-                    if (this.loadedLevel == LOADED_LEVEL_GAME && buildingInfo != null && buildingInfo.m_buildingAI is NursingHomeAi) {
-                        ((NursingHomeAi) buildingInfo.m_buildingAI).updateCapacity(capcityModifier);
+                    if (this.loadedLevel == LOADED_LEVEL_GAME && buildingInfo != null && buildingInfo.m_buildingAI is DormitoryAi) {
+                        ((DormitoryAi) buildingInfo.m_buildingAI).updateCapacity(capcityModifier);
                     }
                 }
                 yield return new WaitForEndOfFrame();

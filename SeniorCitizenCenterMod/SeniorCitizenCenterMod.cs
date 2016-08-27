@@ -2,35 +2,35 @@
 using UnityEngine;
 
 
-namespace SeniorCitizenCenterMod {
+namespace DormitoryMod {
 
-    public class SeniorCitizenCenterMod : LoadingExtensionBase, IUserMod, ISerializableData {
+    public class DormitoryMod : LoadingExtensionBase, IUserMod, ISerializableData {
         private const bool LOG_BASE = true;
 
-        private static SeniorCitizenCenterMod instance;
+        private static DormitoryMod instance;
 
-        private GameObject nursingHomeInitializerObj;
-        private NursingHomeInitializer nursingHomeInitializer;
+        private GameObject dormitoryInitializerObj;
+        private DormitoryInitializer dormitoryInitializer;
         private OptionsManager optionsManager = new OptionsManager();
 
         public string Description {
             get {
-                return "Enables functionality for Nursing Home Assets to function as working Nursing Homes.";
+                return "Enables functionality for Dormitory Assets to function as working Dormitories.";
             }
         }
 
         public string Name {
             get {
-                return "SeniorCitizenCenterMod";
+                return "DormitoryMod";
             }
         }
 
-        public static SeniorCitizenCenterMod getInstance() {
+        public static DormitoryMod getInstance() {
             return instance;
         }
 
-        public NursingHomeInitializer getNursingHomeInitializer() {
-            return this.nursingHomeInitializer;
+        public DormitoryInitializer getDormitoryInitializer() {
+            return this.dormitoryInitializer;
         }
 
         public OptionsManager getOptionsManager() {
@@ -43,36 +43,36 @@ namespace SeniorCitizenCenterMod {
         }
 
         public override void OnCreated(ILoading loading) {
-            Logger.logInfo(LOG_BASE, "SeniorCitizenCenterMod Created");
+            Logger.logInfo(LOG_BASE, "DormitoryMod Created");
             instance = this;
             base.OnCreated(loading);
 
-            if (this.nursingHomeInitializerObj != null) {
+            if (this.dormitoryInitializerObj != null) {
                 return;
             }
             
-            this.nursingHomeInitializerObj = new GameObject("SeniorCitizenCenterMod Nursing Homes");
-            this.nursingHomeInitializer = this.nursingHomeInitializerObj.AddComponent<NursingHomeInitializer>();
+            this.dormitoryInitializerObj = new GameObject("DormitoryMod Dormitories");
+            this.dormitoryInitializer = this.dormitoryInitializerObj.AddComponent<DormitoryInitializer>();
         }
 
         public override void OnLevelUnloading() {
             base.OnLevelUnloading();
-            this.nursingHomeInitializer?.OnLevelUnloading();
+            this.dormitoryInitializer?.OnLevelUnloading();
         }
 
         public override void OnLevelLoaded(LoadMode mode) {
-            Logger.logInfo(LOG_BASE, "SeniorCitizenCenterMod Level Loaded: {0}", mode);
+            Logger.logInfo(LOG_BASE, "DormitoryMod Level Loaded: {0}", mode);
             base.OnLevelLoaded(mode);
             if(mode == LoadMode.LoadGame) {
-                this.nursingHomeInitializer?.OnLevelWasLoaded(NursingHomeInitializer.LOADED_LEVEL_GAME);
+                this.dormitoryInitializer?.OnLevelWasLoaded(DormitoryInitializer.LOADED_LEVEL_GAME);
             }
         }
 
         public override void OnReleased() {
-            Logger.logInfo(LOG_BASE, "SeniorCitizenCenterMod Released");
+            Logger.logInfo(LOG_BASE, "DormitoryMod Released");
             base.OnReleased();
-            if (this.nursingHomeInitializerObj != null) {
-                UnityEngine.Object.Destroy(this.nursingHomeInitializerObj);
+            if (this.dormitoryInitializerObj != null) {
+                UnityEngine.Object.Destroy(this.dormitoryInitializerObj);
             }
         }
 

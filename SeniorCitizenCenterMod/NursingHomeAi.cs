@@ -9,8 +9,8 @@ using ColossalFramework.UI;
 using UnityEngine;
 using System.Threading;
 
-namespace SeniorCitizenCenterMod {
-    public class NursingHomeAi : PlayerBuildingAI {
+namespace DormitoryMod {
+    public class DormitoryAi : PlayerBuildingAI {
         private const bool LOG_PRODUCTION = false;
         private const bool LOG_SIMULATION = false;
         private const bool LOG_RANGE = false;
@@ -18,26 +18,26 @@ namespace SeniorCitizenCenterMod {
 
         private static readonly float[] QUALITY_VALUES = { -50, -25, 10, 40, 70, 125 };
 
-        // TODO: Workout how to have Nursing Homes Coverage display separate from Health Care
-        //private static readonly ItemClass NURSING_HOME_ITEM_CLASS = NursingHomeAi.initNewItemClass();
+        // TODO: Workout how to have Dormitories Coverage display separate from Health Care
+        //private static readonly ItemClass DORMITORY_ITEM_CLASS = DormitoryAi.initNewItemClass();
 
         private Randomizer randomizer = new Randomizer(97);
 
         [CustomizableProperty("Educated Workers", "Workers", 1)]
-        public int numEducatedWorkers = 5;
+        public int numEducatedWorkers = 1;
 
         [CustomizableProperty("Highly Educated Workers", "Workers", 3)]
-        public int numHighlyEducatedWorkers = 4;
+        public int numHighlyEducatedWorkers = 1;
 
         [CustomizableProperty("Number of Rooms")]
         public int numRooms = 25;
         private float capacityModifier = 1.0f;
 
         [CustomizableProperty("Uneducated Workers", "Workers", 0)]
-        public int numUneducatedWorkers = 5;
+        public int numUneducatedWorkers = 1;
 
         [CustomizableProperty("Well Educated Workers", "Workers", 2)]
-        public int numWellEducatedWorkers = 5;
+        public int numWellEducatedWorkers = 1;
 
         [CustomizableProperty("Operation Radius")]
         public float operationRadius = 500f;
@@ -116,8 +116,8 @@ namespace SeniorCitizenCenterMod {
         }
 
         public override void GetPlacementInfoMode(out InfoManager.InfoMode mode, out InfoManager.SubInfoMode subMode, float elevation) {
-            mode = InfoManager.InfoMode.Health;
-            subMode = InfoManager.SubInfoMode.DeathCare;
+            mode = InfoManager.InfoMode.Education;
+            subMode = InfoManager.SubInfoMode.University;
         }
 
         public override int GetResourceRate(ushort buildingID, ref Building buildingData, EconomyManager.Resource resource) {
@@ -135,7 +135,7 @@ namespace SeniorCitizenCenterMod {
         private int getCustomMaintenanceCost(ref Building buildingData) {
             int originalAmount = -(this.m_maintenanceCost * 100);
 
-            SeniorCitizenCenterMod mod = SeniorCitizenCenterMod.getInstance();
+            DormitoryMod mod = DormitoryMod.getInstance();
             if (mod == null) {
                 return 0;
             }
@@ -213,30 +213,30 @@ namespace SeniorCitizenCenterMod {
                 return;
             }
 
-            // Fetch a Senior Citizen
-            SeniorCitizenManager seniorCitizenManager = SeniorCitizenManager.getInstance();
-            uint[] familyWithSeniors = seniorCitizenManager.getFamilyWithSenior();
-            if (familyWithSeniors == null) {
+            // Fetch a Student
+            DormStudentManager dormStudentManager = DormStudentManager.GetInstance();
+            uint[] familyWithStudents = dormStudentManager.GetFamilyWithStudent();
+            if (familyWithStudents == null) {
                 // No Family Located
                 return;
             }
 
             Logger.logInfo(LOG_PRODUCTION, "------------------------------------------------------------");
-            Logger.logInfo(LOG_PRODUCTION, "NursingHomeAi.ProduceGoods -- Family: {0}", string.Join(", ", Array.ConvertAll(familyWithSeniors, item => item.ToString())));
+            Logger.logInfo(LOG_PRODUCTION, "DormitoryAi.ProduceGoods -- Family: {0}", string.Join(", ", Array.ConvertAll(familyWithStudents, item => item.ToString())));
 
             // Check move in chance
             NumWorkers numWorkers = this.getNumWorkers(ref behaviour);
-            bool shouldMoveIn = MoveInProbabilityHelper.checkIfShouldMoveIn(familyWithSeniors, ref buildingData, ref this.randomizer, this.operationRadius, this.quality, ref numWorkers);
+            bool shouldMoveIn = MoveInProbabilityHelper.checkIfShouldMoveIn(familyWithStudents, ref buildingData, ref this.randomizer, this.operationRadius, this.quality, ref numWorkers);
 
             // Process the seniors and move them in if able to, mark the seniors as done processing regardless
             CitizenManager citizenManager = Singleton<CitizenManager>.instance;
-            foreach (uint familyMember in familyWithSeniors) {
-                if (seniorCitizenManager.isSenior(familyMember)) {
+            foreach (uint familyMember in familyWithStudents) {
+                if (dormStudentManager.IsStudent(familyMember)) {
                     if (shouldMoveIn) {
-                        Logger.logInfo(LOG_PRODUCTION, "NursingHomeAi.ProduceGoods -- Moving In: {0}", familyMember);
+                        Logger.logInfo(LOG_PRODUCTION, "DormitoryAi.ProduceGoods -- Moving In: {0}", familyMember);
                         citizenManager.m_citizens.m_buffer[familyMember].SetHome(familyMember, buildingId, emptyRoom);
                     }
-                    seniorCitizenManager.doneProcessingSenior(familyMember);
+                    dormStudentManager.DoneProcessingStudent(familyMember);
                 }
             }
         }
@@ -277,7 +277,7 @@ namespace SeniorCitizenCenterMod {
         }
 
         protected override void SimulationStepActive(ushort buildingID, ref Building buildingData, ref Building.Frame frameData) {
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive");
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive");
             Citizen.BehaviourData behaviour = new Citizen.BehaviourData();
             int aliveCount = 0;
             int totalCount = 0;
@@ -285,18 +285,18 @@ namespace SeniorCitizenCenterMod {
             int aliveHomeCount = 0;
             int emptyHomeCount = 0;
             this.GetHomeBehaviour(buildingID, ref buildingData, ref behaviour, ref aliveCount, ref totalCount, ref homeCount, ref aliveHomeCount, ref emptyHomeCount);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- behaviour: {0}", behaviour);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- aliveCount: {0}", aliveCount);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- totalCount: {0}", totalCount);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- homeCount: {0}", homeCount);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- aliveHomeCount: {0}", aliveHomeCount);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- emptyHomeCount: {0}", emptyHomeCount);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- behaviour: {0}", behaviour);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- aliveCount: {0}", aliveCount);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- totalCount: {0}", totalCount);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- homeCount: {0}", homeCount);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- aliveHomeCount: {0}", aliveHomeCount);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- emptyHomeCount: {0}", emptyHomeCount);
 
             DistrictManager districtManager = Singleton<DistrictManager>.instance;
             byte district = districtManager.GetDistrict(buildingData.m_position);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- district: {0}", district);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- district: {0}", district);
             DistrictPolicies.Services policies = districtManager.m_districts.m_buffer[(int) district].m_servicePolicies;
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- policies: {0}", policies);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- policies: {0}", policies);
 
             DistrictPolicies.Taxation taxationPolicies = districtManager.m_districts.m_buffer[(int) district].m_taxationPolicies;
             DistrictPolicies.CityPlanning cityPlanning = districtManager.m_districts.m_buffer[(int) district].m_cityPlanningPolicies;
@@ -306,7 +306,7 @@ namespace SeniorCitizenCenterMod {
             districtManager.m_districts.m_buffer[(int) district].m_servicePoliciesEffect |= policies & (DistrictPolicies.Services.PowerSaving | DistrictPolicies.Services.WaterSaving | DistrictPolicies.Services.SmokeDetectors | DistrictPolicies.Services.PetBan | DistrictPolicies.Services.Recycling | DistrictPolicies.Services.SmokingBan | DistrictPolicies.Services.ExtraInsulation | DistrictPolicies.Services.NoElectricity | DistrictPolicies.Services.OnlyElectricity);
 
 
-            // TODO: Ignore Tax Stuff? - Might want to add possabilitiy to collect taxes from Nursing Homes
+            // TODO: Ignore Tax Stuff? - Might want to add possabilitiy to collect taxes from Dormitories
             //if (this.m_info.m_class.m_subService == ItemClass.SubService.ResidentialLow) {
             //    if ((taxationPolicies & (DistrictPolicies.Taxation.TaxRaiseResLow | DistrictPolicies.Taxation.TaxLowerResLow)) != (DistrictPolicies.Taxation.TaxRaiseResLow | DistrictPolicies.Taxation.TaxLowerResLow)) {
             //        districtManager.m_districts.m_buffer[(int) district].m_taxationPoliciesEffect |= taxationPolicies & (DistrictPolicies.Taxation.TaxRaiseResLow | DistrictPolicies.Taxation.TaxLowerResLow);
@@ -317,30 +317,30 @@ namespace SeniorCitizenCenterMod {
 
             // No clue what these are for, setting some policies at the disctrict level?
             districtManager.m_districts.m_buffer[(int) district].m_cityPlanningPoliciesEffect |= cityPlanning & (DistrictPolicies.CityPlanning.HighTechHousing | DistrictPolicies.CityPlanning.HeavyTrafficBan | DistrictPolicies.CityPlanning.EncourageBiking | DistrictPolicies.CityPlanning.BikeBan | DistrictPolicies.CityPlanning.OldTown | DistrictPolicies.CityPlanning.AntiSlip);
-            districtManager.m_districts.m_buffer[(int) district].m_specialPoliciesEffect |= special & (DistrictPolicies.Special.ProHippie | DistrictPolicies.Special.ProHipster | DistrictPolicies.Special.ProRedneck | DistrictPolicies.Special.ProGangsta | DistrictPolicies.Special.AntiHippie | DistrictPolicies.Special.AntiHipster | DistrictPolicies.Special.AntiRedneck | DistrictPolicies.Special.AntiGangsta | DistrictPolicies.Special.ComeOneComeAll | DistrictPolicies.Special.WeAreTheNorm);
+            districtManager.m_districts.m_buffer[(int) district].m_specialPoliciesEffect |= special & (DistrictPolicies.Special.Reserved );
 
             // Handle Sub Culture -- Not really sure why only when ProHippie is "loaded"
-            if (districtManager.IsPolicyLoaded(DistrictPolicies.Policies.ProHippie)) {
+            if (districtManager.IsPolicyLoaded(DistrictPolicies.Policies.ComeOneComeAll)) {
                 int hippieValue = 0;
                 int hipsterValue = 0;
                 int redneckValue = 0;
                 int gangstaValue = 0;
-                if ((special & (DistrictPolicies.Special.ProHippie | DistrictPolicies.Special.ComeOneComeAll)) != DistrictPolicies.Special.None)
-                    hippieValue += 100;
-                if ((special & (DistrictPolicies.Special.AntiHippie | DistrictPolicies.Special.WeAreTheNorm)) != DistrictPolicies.Special.None)
-                    hippieValue -= 100;
-                if ((special & (DistrictPolicies.Special.ProHipster | DistrictPolicies.Special.ComeOneComeAll)) != DistrictPolicies.Special.None)
-                    hipsterValue += 100;
-                if ((special & (DistrictPolicies.Special.AntiHipster | DistrictPolicies.Special.WeAreTheNorm)) != DistrictPolicies.Special.None)
-                    hipsterValue -= 100;
-                if ((special & (DistrictPolicies.Special.ProRedneck | DistrictPolicies.Special.ComeOneComeAll)) != DistrictPolicies.Special.None)
-                    redneckValue += 100;
-                if ((special & (DistrictPolicies.Special.AntiRedneck | DistrictPolicies.Special.WeAreTheNorm)) != DistrictPolicies.Special.None)
-                    redneckValue -= 100;
-                if ((special & (DistrictPolicies.Special.ProGangsta | DistrictPolicies.Special.ComeOneComeAll)) != DistrictPolicies.Special.None)
-                    gangstaValue += 100;
-                if ((special & (DistrictPolicies.Special.AntiGangsta | DistrictPolicies.Special.WeAreTheNorm)) != DistrictPolicies.Special.None)
-                    gangstaValue -= 100;
+                //if ((special & (DistrictPolicies.Special.ProHippie | DistrictPolicies.Special.ComeOneComeAll)) != DistrictPolicies.Special.None)
+                //    hippieValue += 100;
+                //if ((special & (DistrictPolicies.Special.AntiHippie | DistrictPolicies.Special.WeAreTheNorm)) != DistrictPolicies.Special.None)
+                //    hippieValue -= 100;
+                //if ((special & (DistrictPolicies.Special.ProHipster | DistrictPolicies.Special.ComeOneComeAll)) != DistrictPolicies.Special.None)
+                //    hipsterValue += 100;
+                //if ((special & (DistrictPolicies.Special.AntiHipster | DistrictPolicies.Special.WeAreTheNorm)) != DistrictPolicies.Special.None)
+                //    hipsterValue -= 100;
+                //if ((special & (DistrictPolicies.Special.ProRedneck | DistrictPolicies.Special.ComeOneComeAll)) != DistrictPolicies.Special.None)
+                //    redneckValue += 100;
+                //if ((special & (DistrictPolicies.Special.AntiRedneck | DistrictPolicies.Special.WeAreTheNorm)) != DistrictPolicies.Special.None)
+                //    redneckValue -= 100;
+                //if ((special & (DistrictPolicies.Special.ProGangsta | DistrictPolicies.Special.ComeOneComeAll)) != DistrictPolicies.Special.None)
+                //    gangstaValue += 100;
+                //if ((special & (DistrictPolicies.Special.AntiGangsta | DistrictPolicies.Special.WeAreTheNorm)) != DistrictPolicies.Special.None)
+                //    gangstaValue -= 100;
                 if (hippieValue < 0)
                     hippieValue = 0;
                 if (hipsterValue < 0)
@@ -352,7 +352,7 @@ namespace SeniorCitizenCenterMod {
                 int combinedSubCultureValue = Mathf.Max(100, hippieValue + hipsterValue + redneckValue + gangstaValue);
                 int modifiedSubCultureValue = new Randomizer((int) buildingID << 16).Int32((uint) combinedSubCultureValue);
                 buildingData.SubCultureType = modifiedSubCultureValue >= hippieValue ? (modifiedSubCultureValue >= hippieValue + hipsterValue ? (modifiedSubCultureValue >= hippieValue + hipsterValue + redneckValue ? (modifiedSubCultureValue >= hippieValue + hipsterValue + redneckValue + gangstaValue ? Citizen.SubCulture.Generic : Citizen.SubCulture.Gangsta) : Citizen.SubCulture.Redneck) : Citizen.SubCulture.Hipster) : Citizen.SubCulture.Hippie;
-                Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- SubCultureType: {0}", buildingData.SubCultureType);
+                Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- SubCultureType: {0}", buildingData.SubCultureType);
             }
 
             // Handle Consumptions
@@ -362,11 +362,11 @@ namespace SeniorCitizenCenterMod {
             int garbageAccumulation;
             int incomeAccumulation;
             this.GetConsumptionRates(new Randomizer((int) buildingID), 100, out electricityConsumption, out waterConsumption, out sewageAccumulation, out garbageAccumulation, out incomeAccumulation);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- electricityConsumption: {0}", electricityConsumption);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- waterConsumption: {0}", waterConsumption);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- sewageAccumulation: {0}", sewageAccumulation);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- garbageAccumulation: {0}", garbageAccumulation);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- incomeAccumulation: {0}", incomeAccumulation);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- electricityConsumption: {0}", electricityConsumption);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- waterConsumption: {0}", waterConsumption);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- sewageAccumulation: {0}", sewageAccumulation);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- garbageAccumulation: {0}", garbageAccumulation);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- incomeAccumulation: {0}", incomeAccumulation);
 
             int modifiedElectricityConsumption = 1 + (electricityConsumption * behaviour.m_electricityConsumption + 9999) / 10000;
             waterConsumption = 1 + (waterConsumption * behaviour.m_waterConsumption + 9999) / 10000;
@@ -393,11 +393,11 @@ namespace SeniorCitizenCenterMod {
                 }
             }
 
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- modifiedElectricityConsumption: {0}", modifiedElectricityConsumption);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- modifiedWaterConsumption: {0}", waterConsumption);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- modifiedSewageAccumulation: {0}", modifiedSewageAccumulation);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- modifiedGarbageAccumulation: {0}", garbageAccumulation);
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- modifiedIncomeAccumulation: {0}", modifiedIncomeAccumulation);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- modifiedElectricityConsumption: {0}", modifiedElectricityConsumption);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- modifiedWaterConsumption: {0}", waterConsumption);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- modifiedSewageAccumulation: {0}", modifiedSewageAccumulation);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- modifiedGarbageAccumulation: {0}", garbageAccumulation);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- modifiedIncomeAccumulation: {0}", modifiedIncomeAccumulation);
 
             if ((int) buildingData.m_fireIntensity == 0) {
                 int commonConsumptionValue = this.HandleCommonConsumption(buildingID, ref buildingData, ref modifiedElectricityConsumption, ref heatingConsumption, ref waterConsumption, ref modifiedSewageAccumulation, ref garbageAccumulation, policies);
@@ -428,7 +428,7 @@ namespace SeniorCitizenCenterMod {
                 }
                 Singleton<ImmaterialResourceManager>.instance.AddResource(ImmaterialResourceManager.Resource.Health, behaviour.m_healthAccumulation, buildingData.m_position, radius);
             }
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- health: {0}", health);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- health: {0}", health);
 
             // Get the Wellbeing
             int wellbeing = 0;
@@ -438,7 +438,7 @@ namespace SeniorCitizenCenterMod {
                 }
                 Singleton<ImmaterialResourceManager>.instance.AddResource(ImmaterialResourceManager.Resource.Wellbeing, behaviour.m_wellbeingAccumulation, buildingData.m_position, radius);
             }
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- wellbeing: {0}", wellbeing);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- wellbeing: {0}", wellbeing);
 
             // Calculate Happiness
             int happiness = Citizen.GetHappiness(health, wellbeing);
@@ -447,7 +447,7 @@ namespace SeniorCitizenCenterMod {
             } else if (buildingData.m_problems != Notification.Problem.None) {
                 happiness -= happiness >> 2;
             }
-            Logger.logInfo(LOG_SIMULATION, "NursingHomeAi.SimulationStepActive -- happiness: {0}", happiness);
+            Logger.logInfo(LOG_SIMULATION, "DormitoryAi.SimulationStepActive -- happiness: {0}", happiness);
 
             // TODO: Ignore Tax Stuff for now
             //int taxRate = Singleton<EconomyManager>.instance.GetTaxRate(this.m_info.m_class, taxationPolicies);
@@ -560,7 +560,7 @@ namespace SeniorCitizenCenterMod {
                     for (int index = 0; index < 5; ++index) {
                         uint citizen = citizenManager.m_units.m_buffer[citizenUnit].GetCitizen(index);
                         if ((int) citizen != 0 && !citizenManager.m_citizens.m_buffer[citizen].Dead) {
-                            residentRequirement1 += NursingHomeAi.GetResidentRequirement(resource, ref citizenManager.m_citizens.m_buffer[citizen]);
+                            residentRequirement1 += DormitoryAi.GetResidentRequirement(resource, ref citizenManager.m_citizens.m_buffer[citizen]);
                             ++residentRequirement2;
                         }
                     }
@@ -622,19 +622,19 @@ namespace SeniorCitizenCenterMod {
                 return 0.0f;
             switch (resource) {
                 case ImmaterialResourceManager.Resource.HealthCare:
-                    int residentRequirement1 = NursingHomeAi.GetAverageResidentRequirement(buildingID, ref data, resource);
+                    int residentRequirement1 = DormitoryAi.GetAverageResidentRequirement(buildingID, ref data, resource);
                     int local1;
                     Singleton<ImmaterialResourceManager>.instance.CheckLocalResource(resource, data.m_position, out local1);
                     int num1 = ImmaterialResourceManager.CalculateResourceEffect(local1, residentRequirement1, 500, 20, 40);
                     return Mathf.Clamp((float) (ImmaterialResourceManager.CalculateResourceEffect(local1 + Mathf.RoundToInt(amount), residentRequirement1, 500, 20, 40) - num1) / 20f, -1f, 1f);
                 case ImmaterialResourceManager.Resource.FireDepartment:
-                    int residentRequirement2 = NursingHomeAi.GetAverageResidentRequirement(buildingID, ref data, resource);
+                    int residentRequirement2 = DormitoryAi.GetAverageResidentRequirement(buildingID, ref data, resource);
                     int local2;
                     Singleton<ImmaterialResourceManager>.instance.CheckLocalResource(resource, data.m_position, out local2);
                     int num2 = ImmaterialResourceManager.CalculateResourceEffect(local2, residentRequirement2, 500, 20, 40);
                     return Mathf.Clamp((float) (ImmaterialResourceManager.CalculateResourceEffect(local2 + Mathf.RoundToInt(amount), residentRequirement2, 500, 20, 40) - num2) / 20f, -1f, 1f);
                 case ImmaterialResourceManager.Resource.PoliceDepartment:
-                    int residentRequirement3 = NursingHomeAi.GetAverageResidentRequirement(buildingID, ref data, resource);
+                    int residentRequirement3 = DormitoryAi.GetAverageResidentRequirement(buildingID, ref data, resource);
                     int local3;
                     Singleton<ImmaterialResourceManager>.instance.CheckLocalResource(resource, data.m_position, out local3);
                     int num3 = ImmaterialResourceManager.CalculateResourceEffect(local3, residentRequirement3, 500, 20, 40);
@@ -642,19 +642,19 @@ namespace SeniorCitizenCenterMod {
                 case ImmaterialResourceManager.Resource.EducationElementary:
                 case ImmaterialResourceManager.Resource.EducationHighSchool:
                 case ImmaterialResourceManager.Resource.EducationUniversity:
-                    int residentRequirement4 = NursingHomeAi.GetAverageResidentRequirement(buildingID, ref data, resource);
+                    int residentRequirement4 = DormitoryAi.GetAverageResidentRequirement(buildingID, ref data, resource);
                     int local4;
                     Singleton<ImmaterialResourceManager>.instance.CheckLocalResource(resource, data.m_position, out local4);
                     int num4 = ImmaterialResourceManager.CalculateResourceEffect(local4, residentRequirement4, 500, 20, 40);
                     return Mathf.Clamp((float) (ImmaterialResourceManager.CalculateResourceEffect(local4 + Mathf.RoundToInt(amount), residentRequirement4, 500, 20, 40) - num4) / 20f, -1f, 1f);
                 case ImmaterialResourceManager.Resource.DeathCare:
-                    int residentRequirement5 = NursingHomeAi.GetAverageResidentRequirement(buildingID, ref data, resource);
+                    int residentRequirement5 = DormitoryAi.GetAverageResidentRequirement(buildingID, ref data, resource);
                     int local5;
                     Singleton<ImmaterialResourceManager>.instance.CheckLocalResource(resource, data.m_position, out local5);
                     int num5 = ImmaterialResourceManager.CalculateResourceEffect(local5, residentRequirement5, 500, 10, 20);
                     return Mathf.Clamp((float) (ImmaterialResourceManager.CalculateResourceEffect(local5 + Mathf.RoundToInt(amount), residentRequirement5, 500, 10, 20) - num5) / 20f, -1f, 1f);
                 case ImmaterialResourceManager.Resource.PublicTransport:
-                    int residentRequirement6 = NursingHomeAi.GetAverageResidentRequirement(buildingID, ref data, resource);
+                    int residentRequirement6 = DormitoryAi.GetAverageResidentRequirement(buildingID, ref data, resource);
                     int local6;
                     Singleton<ImmaterialResourceManager>.instance.CheckLocalResource(resource, data.m_position, out local6);
                     int num6 = ImmaterialResourceManager.CalculateResourceEffect(local6, residentRequirement6, 500, 20, 40);
@@ -665,7 +665,7 @@ namespace SeniorCitizenCenterMod {
                     int num7 = local7 * 100 / (int) byte.MaxValue;
                     return Mathf.Clamp((float) (Mathf.Clamp(local7 + Mathf.RoundToInt(amount), 0, (int) byte.MaxValue) * 100 / (int) byte.MaxValue - num7) / 50f, -1f, 1f);
                 case ImmaterialResourceManager.Resource.Entertainment:
-                    int residentRequirement7 = NursingHomeAi.GetAverageResidentRequirement(buildingID, ref data, resource);
+                    int residentRequirement7 = DormitoryAi.GetAverageResidentRequirement(buildingID, ref data, resource);
                     int local8;
                     Singleton<ImmaterialResourceManager>.instance.CheckLocalResource(resource, data.m_position, out local8);
                     int num8 = ImmaterialResourceManager.CalculateResourceEffect(local8, residentRequirement7, 500, 30, 60);
@@ -766,7 +766,7 @@ namespace SeniorCitizenCenterMod {
             Vector3 position = buildingData.m_position;
             position.y += this.m_info.m_size.y;
             Singleton<NotificationManager>.instance.AddEvent(notificationEventType, position, 1.5f);
-            Singleton<NotificationManager>.instance.AddWaveEvent(buildingData.m_position, notificationWaveEventType, ImmaterialResourceManager.Resource.DeathCare, NursingHomeAi.QUALITY_VALUES[this.quality], this.operationRadius);
+            Singleton<NotificationManager>.instance.AddWaveEvent(buildingData.m_position, notificationWaveEventType, ImmaterialResourceManager.Resource.DeathCare, DormitoryAi.QUALITY_VALUES[this.quality], this.operationRadius);
         }
 
         protected override void ManualDeactivation(ushort buildingId, ref Building buildingData) {
@@ -775,24 +775,24 @@ namespace SeniorCitizenCenterMod {
             Vector3 position = buildingData.m_position;
             position.y += this.m_info.m_size.y;
             Singleton<NotificationManager>.instance.AddEvent(notificationEventType, position, 1.5f);
-            Singleton<NotificationManager>.instance.AddWaveEvent(buildingData.m_position, notificationWaveEventType, ImmaterialResourceManager.Resource.DeathCare, -NursingHomeAi.QUALITY_VALUES[this.quality], this.operationRadius);
+            Singleton<NotificationManager>.instance.AddWaveEvent(buildingData.m_position, notificationWaveEventType, ImmaterialResourceManager.Resource.DeathCare, -DormitoryAi.QUALITY_VALUES[this.quality], this.operationRadius);
         }
 
         public override float GetCurrentRange(ushort buildingId, ref Building data) {
             /* Logging stuff
             System.Diagnostics.StackTrace stackTrace = new System.Diagnostics.StackTrace();
-            Logger.logInfo(RANGE, "NursingHomeAi.GetPlacementInfoMode -- Stack Trace: {0}", stackTrace.ToString());
-            Logger.logInfo(LOG_RANGE, "NursingHomeAi.GetPlacementInfoMode -- m_service: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_service"));
-            Logger.logInfo(LOG_RANGE, "NursingHomeAi.GetPlacementInfoMode -- m_subService: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_subService"));
-            Logger.logInfo(LOG_RANGE, "NursingHomeAi.GetPlacementInfoMode -- m_level: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_level"));
-            Logger.logInfo(LOG_RANGE, "NursingHomeAi.GetPlacementInfoMode -- m_buildingInfo: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_buildingInfo"));
-            Logger.logInfo(LOG_RANGE, "NursingHomeAi.GetPlacementInfoMode -- m_ignoreBuilding: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_ignoreBuilding"));
+            Logger.logInfo(RANGE, "DormitoryAi.GetPlacementInfoMode -- Stack Trace: {0}", stackTrace.ToString());
+            Logger.logInfo(LOG_RANGE, "DormitoryAi.GetPlacementInfoMode -- m_service: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_service"));
+            Logger.logInfo(LOG_RANGE, "DormitoryAi.GetPlacementInfoMode -- m_subService: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_subService"));
+            Logger.logInfo(LOG_RANGE, "DormitoryAi.GetPlacementInfoMode -- m_level: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_level"));
+            Logger.logInfo(LOG_RANGE, "DormitoryAi.GetPlacementInfoMode -- m_buildingInfo: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_buildingInfo"));
+            Logger.logInfo(LOG_RANGE, "DormitoryAi.GetPlacementInfoMode -- m_ignoreBuilding: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_ignoreBuilding"));
             */
 
-            /* TODO: Nursing Homes should be highlighted separate from HealthCare and DeathCare
-            // Only handle range when placing a Nursing Home, not when looking at health info
+            /* TODO: Dormitories should be highlighted separate from HealthCare and DeathCare
+            // Only handle range when placing a Dormitory, not when looking at health info
             BuildingInfo buildingInfo = (BuildingInfo) ReflectionHelper.GetInstanceField(typeof (CoverageManager), Singleton<CoverageManager>.instance, "m_buildingInfo");
-            if (buildingInfo != null && !(buildingInfo.m_buildingAI is NursingHomeAi)) {
+            if (buildingInfo != null && !(buildingInfo.m_buildingAI is DormitoryAi)) {
                 return 0.0f;
             }
             */
@@ -864,7 +864,7 @@ namespace SeniorCitizenCenterMod {
             stringBuilder.Append(string.Format("Highly Educated Workers: {0} of {1}", workerBehaviourData.m_educated3Count, this.numHighlyEducatedWorkers));
             stringBuilder.Append(Environment.NewLine);
             stringBuilder.Append(Environment.NewLine);
-            stringBuilder.Append(string.Format("Nursing Home Quality: {0}", this.quality));
+            stringBuilder.Append(string.Format("Dormitory Quality: {0}", this.quality));
             stringBuilder.Append(Environment.NewLine);
             stringBuilder.Append(string.Format("Rooms Occupied: {0} of {1}", numRoomsOccupied, getModifiedCapacity()));
             stringBuilder.Append(Environment.NewLine);
@@ -904,11 +904,11 @@ namespace SeniorCitizenCenterMod {
         }
 
         public void updateCapacity(float newCapacityModifier) {
-            Logger.logInfo(Logger.LOG_OPTIONS, "NursingHomeAI.updateCapacity -- Updating capacity with modifier: {0}", newCapacityModifier);
+            Logger.logInfo(Logger.LOG_OPTIONS, "DormitoryAI.updateCapacity -- Updating capacity with modifier: {0}", newCapacityModifier);
             // Set the capcityModifier and check to see if the value actually changes
             if (Interlocked.Exchange(ref this.capacityModifier, newCapacityModifier) == newCapacityModifier) {
                 // Capcity has already been set to this value, nothing to do
-                Logger.logInfo(Logger.LOG_OPTIONS, "NursingHomeAI.updateCapacity -- Skipping capacity change because the value was already set");
+                Logger.logInfo(Logger.LOG_OPTIONS, "DormitoryAI.updateCapacity -- Skipping capacity change because the value was already set");
                 return;
             }
         }
@@ -935,7 +935,7 @@ namespace SeniorCitizenCenterMod {
                 citizenUnitIndex = nextCitizenUnitIndex;
             }
 
-            Logger.logInfo(Logger.LOG_CAPACITY_MANAGEMENT, "NursingHomeAi.validateCapacity -- Checking Expected Capacity {0} vs Current Capacity {1} for Building {2}", numRoomsExpected, numRoomsFound, buildingId);
+            Logger.logInfo(Logger.LOG_CAPACITY_MANAGEMENT, "DormitoryAi.validateCapacity -- Checking Expected Capacity {0} vs Current Capacity {1} for Building {2}", numRoomsExpected, numRoomsFound, buildingId);
             // Check to see if the correct amount of rooms are present, otherwise adjust accordingly
             if (numRoomsFound == numRoomsExpected) {
                 return;
@@ -950,7 +950,7 @@ namespace SeniorCitizenCenterMod {
         }
 
         private void createRooms(int numRoomsToCreate, ushort buildingId, ref Building data, uint lastCitizenUnitIndex) {
-            Logger.logInfo(Logger.LOG_CAPACITY_MANAGEMENT, "NursingHomeAi.createRooms -- Creating {0} Rooms", numRoomsToCreate);
+            Logger.logInfo(Logger.LOG_CAPACITY_MANAGEMENT, "DormitoryAi.createRooms -- Creating {0} Rooms", numRoomsToCreate);
             CitizenManager citizenManager = Singleton<CitizenManager>.instance;
 
             uint firstUnit = 0;
@@ -959,7 +959,7 @@ namespace SeniorCitizenCenterMod {
         }
 
         private void deleteRooms(int numRoomsToDelete, ushort buildingId, ref Building data) {
-            Logger.logInfo(Logger.LOG_CAPACITY_MANAGEMENT, "NursingHomeAi.deleteRooms -- Deleting {0} Rooms", numRoomsToDelete);
+            Logger.logInfo(Logger.LOG_CAPACITY_MANAGEMENT, "DormitoryAi.deleteRooms -- Deleting {0} Rooms", numRoomsToDelete);
             CitizenManager citizenManager = Singleton<CitizenManager>.instance;
             
             // Always start with the second to avoid loss of pointer from the building to the first unit
@@ -988,7 +988,7 @@ namespace SeniorCitizenCenterMod {
                 return;
             }
 
-            Logger.logInfo(Logger.LOG_CAPACITY_MANAGEMENT, "NursingHomeAi.deleteRooms -- Deleting {0} Occupied Rooms", numRoomsToDelete);
+            Logger.logInfo(Logger.LOG_CAPACITY_MANAGEMENT, "DormitoryAi.deleteRooms -- Deleting {0} Occupied Rooms", numRoomsToDelete);
             // Still need to delete more rooms so start deleting rooms with people in them...
             // Always start with the second to avoid loss of pointer from the building to the first unit
             prevUnit = data.m_citizenUnits;
@@ -1050,7 +1050,7 @@ namespace SeniorCitizenCenterMod {
         }
 
         public override void CreateBuilding(ushort buildingId, ref Building data) {
-            Logger.logInfo(LOG_BUILDING, "NursingHomeAI.CreateBuilding -- New Nursing Home Created: {0}", data.Info.name);
+            Logger.logInfo(LOG_BUILDING, "DormitoryAI.CreateBuilding -- New Dormitory Created: {0}", data.Info.name);
             base.CreateBuilding(buildingId, ref data);
             int workCount = this.numUneducatedWorkers + this.numEducatedWorkers + this.numWellEducatedWorkers + this.numHighlyEducatedWorkers;
             Singleton<CitizenManager>.instance.CreateUnits(out data.m_citizenUnits, ref Singleton<SimulationManager>.instance.m_randomizer, buildingId, 0, getModifiedCapacity(), workCount, 0, 0, 0);
@@ -1064,7 +1064,7 @@ namespace SeniorCitizenCenterMod {
         }
 
         public override void BuildingLoaded(ushort buildingId, ref Building data, uint version) {
-            Logger.logInfo(LOG_BUILDING, "NursingHomeAI.BuildingLoaded -- Nursing Home Loaded: {0}", data.Info.name);
+            Logger.logInfo(LOG_BUILDING, "DormitoryAI.BuildingLoaded -- Dormitory Loaded: {0}", data.Info.name);
             base.BuildingLoaded(buildingId, ref data, version);
 
             // Validate the capacity and adjust accordingly - but don't create new units, that will be done by EnsureCitizenUnits
@@ -1075,7 +1075,7 @@ namespace SeniorCitizenCenterMod {
         }
 
         public override void ReleaseBuilding(ushort buildingId, ref Building data) {
-            Logger.logInfo(LOG_BUILDING, "NursingHomeAI.ReleaseBuilding -- Nursing Home Released: {0}", data.Info.name);
+            Logger.logInfo(LOG_BUILDING, "DormitoryAI.ReleaseBuilding -- Dormitory Released: {0}", data.Info.name);
             base.ReleaseBuilding(buildingId, ref data);
         }
 
@@ -1083,13 +1083,13 @@ namespace SeniorCitizenCenterMod {
             return true;
         }
 
-        /* TODO: Workout how to have Nursing Homes Coverage display separate from Health Care
+        /* TODO: Workout how to have Dormitories Coverage display separate from Health Care
         private static ItemClass initNewItemClass() {
-            ItemClass newNursingHomeItemClass = new ItemClass();
-            newNursingHomeItemClass.m_level = ItemClass.Level.Level2;
-            newNursingHomeItemClass.m_service = ItemClass.Service.HealthCare;
-            newNursingHomeItemClass.m_subService = ItemClass.SubService.None;
-            return newNursingHomeItemClass;
+            ItemClass newDormitoryItemClass = new ItemClass();
+            newDormitoryItemClass.m_level = ItemClass.Level.Level2;
+            newDormitoryItemClass.m_service = ItemClass.Service.Education;
+            newDormitoryItemClass.m_subService = ItemClass.SubService.None;
+            return newDormitoryItemClass;
         }
         */
     }

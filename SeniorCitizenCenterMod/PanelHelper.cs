@@ -3,7 +3,7 @@ using ColossalFramework.UI;
 using ICities;
 using UnityEngine;
 
-namespace SeniorCitizenCenterMod {
+namespace DormitoryMod {
     public class PanelHelper : ThreadingExtensionBase {
 
         public const bool LOG_CUSTOM_PANELS = false;
@@ -16,7 +16,7 @@ namespace SeniorCitizenCenterMod {
         public const string UPKEEP_LABEL_NAME = "Upkeep";
 
         bool initialized = false;
-        private static bool replacedHealthcareGroupPanel = false;
+        private static bool replacedEducationGroupPanel = false;
 
         float originalPanelHeight = 0.0f;
         public static Color32 originalUpkeepColor;
@@ -106,10 +106,10 @@ namespace SeniorCitizenCenterMod {
 
         public static void reset() {
             // Reset the values needed for panel initilization, not everything needs to be re-initilized, but the healthcare menu does
-            replacedHealthcareGroupPanel = false;
+            replacedEducationGroupPanel = false;
         }
 
-        public static bool initCustomHealthcareGroupPanel() {
+        public static bool initCustomEducationGroupPanel() {
 
             // Get the Tab Strip, but fetching it before it's initlized can throw an exception
             UITabstrip strip = null;
@@ -120,42 +120,42 @@ namespace SeniorCitizenCenterMod {
             }
 
             // Get the other needed components
-            UIComponent healthCare = strip?.Find(CustomHealthcareGroupPanel.HEALTHCARE_NAME);
-            UIComponent healthcarePanelComp = strip?.tabPages?.Find(CustomHealthcareGroupPanel.HEALTHCARE_PANEL_NAME);
-            HealthcareGroupPanel healthcareGroupPanel = healthcarePanelComp?.GetComponent<HealthcareGroupPanel>();
+            UIComponent education = strip?.Find(CustomEducationGroupPanel.EDUCATION_NAME);
+            UIComponent healthcarePanelComp = strip?.tabPages?.Find(CustomEducationGroupPanel.EDUCATION_PANEL_NAME);
+            EducationGroupPanel healthcareGroupPanel = healthcarePanelComp?.GetComponent<EducationGroupPanel>();
 
-            // Ensure the Healthcare Components are available before initilization
-            if (healthCare == null || healthcarePanelComp == null || healthcareGroupPanel == null || !healthCare.isActiveAndEnabled || !healthCare.isVisible) {
-                Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomHealthcareGroupPanel -- Waiting to initilize Healthcare Menu because the components aren't ready");
+            // Ensure the Education Components are available before initilization
+            if (education == null || healthcarePanelComp == null || healthcareGroupPanel == null || !education.isActiveAndEnabled || !education.isVisible) {
+                Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Waiting to initilize Education Menu because the components aren't ready");
                 return false;
             }
 
             // Can start initilization
-            Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomHealthcareGroupPanel -- Initilizing Healthcare Menu");
+            Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Initilizing Education Menu");
 
-            // Check the Healthcare Group Panel and replace it with a Custom Healthcare Group Panel
-            if (!(healthcareGroupPanel is CustomHealthcareGroupPanel)) {
-                if (replacedHealthcareGroupPanel) {
-                    Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomHealthcareGroupPanel -- Waiting to continue initilization of the Healthcare Menu because the Custom Panel isn't fully initilized yet");
+            // Check the Education Group Panel and replace it with a Custom Education Group Panel
+            if (!(healthcareGroupPanel is CustomEducationGroupPanel)) {
+                if (replacedEducationGroupPanel) {
+                    Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Waiting to continue initilization of the Education Menu because the Custom Panel isn't fully initilized yet");
                     return false;
                 }
 
                 // Destroy the existing group panel
-                Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomHealthcareGroupPanel -- Destroying the existing Healthcare Group Panel: {0}", healthcareGroupPanel);
+                Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Destroying the existing Education Group Panel: {0}", healthcareGroupPanel);
                 UnityEngine.Object.Destroy(healthcareGroupPanel);
 
                 // Create a new custom group panel
-                Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomHealthcareGroupPanel -- Creating the new Custom Healthcare Group Panel");
-                healthcarePanelComp.gameObject.AddComponent(typeof (CustomHealthcareGroupPanel));
+                Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Creating the new Custom Education Group Panel");
+                healthcarePanelComp.gameObject.AddComponent(typeof (CustomEducationGroupPanel));
 
                 // Mark this step as complete and bail to give this step a chance to complete
-                replacedHealthcareGroupPanel = true;
+                replacedEducationGroupPanel = true;
                 return false;
             }
 
-            // Attempt initilization of the Custom Healthcare Group Panel -- Will take multiple attempts to completely initilize
-            Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomHealthcareGroupPanel -- Attempting initilization of the Custom Healthcare Group Panel");
-            return ((CustomHealthcareGroupPanel) healthcareGroupPanel).initNursingHomes();
+            // Attempt initilization of the Custom Education Group Panel -- Will take multiple attempts to completely initilize
+            Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Attempting initilization of the Custom Education Group Panel");
+            return ((CustomEducationGroupPanel) healthcareGroupPanel).initDormitories();
             
         }
         

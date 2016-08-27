@@ -1,9 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeniorCitizenCenterMod", "SeniorCitizenCenterMod\SeniorCitizenCenterMod.csproj", "{35D4211F-E897-401F-969E-7B6115A2F609}"
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DormitoryMod", "SeniorCitizenCenterMod\DormitoryMod.csproj", "{35D4211F-E897-401F-969E-7B6115A2F609}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

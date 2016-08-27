@@ -5,13 +5,13 @@ using System.Xml.Serialization;
 using System;
 using ColossalFramework;
 
-namespace SeniorCitizenCenterMod {
+namespace DormitoryMod {
     public class OptionsManager {
 
         private static readonly string[] CAPACITY_LABELS = new string[] { "Give Em Room (x0.5)", "Realistic (x1.0)", "Just a bit More (x1.5)", "Gameplay over Realism (x2.0)", "Who needs Living Space? (x2.5)", "Pack em like Sardines! (x3.0)" };
         private static readonly float[] CAPACITY_VALUES = new float[] { 0.5f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f };
 
-        private static readonly string[] INCOME_LABELS = new string[] { "Communisim is Key (Full Maintenance)", "Seniors can Help a Little (Half Maintenance at Full Capacity)", "Make the Seniors Pay (No Maintenance at Full Capacity)", "Nursing Homes should be Profitable (Maintenance becomes Profit at Full Capacity)", "Twice the Pain, Twice the Gain (2x Maintenance, 2x Profit)", "Show me the Money! (Profit x2, Normal Maintenance)" };
+        private static readonly string[] INCOME_LABELS = new string[] { "Communisim is Key (Full Maintenance)", "Students can Help a Little (Half Maintenance at Full Capacity)", "Make the Students Pay (No Maintenance at Full Capacity)", "Dormitories should be Profitable (Maintenance becomes Profit at Full Capacity)", "Twice the Pain, Twice the Gain (2x Maintenance, 2x Profit)", "Show me the Money! (Profit x2, Normal Maintenance)" };
         public enum IncomeValues {
             FULL_MAINTENANCE = 1,
             HALF_MAINTENANCE = 2,
@@ -29,7 +29,7 @@ namespace SeniorCitizenCenterMod {
 
         public void initialize(UIHelperBase helper) {
             Logger.logInfo(Logger.LOG_OPTIONS, "OptionsManager.initialize -- Initializing Menu Options");
-            UIHelperBase group = helper.AddGroup("Nursing Home Settings");
+            UIHelperBase group = helper.AddGroup("Dormitory Settings");
             this.capacityDropDown = (UIDropDown) group.AddDropdown("Capacity Modifier", CAPACITY_LABELS, 1, handleCapacityChange);
             this.incomeDropDown = (UIDropDown) group.AddDropdown("Income Modifier", INCOME_LABELS, 2, handleIncomeChange);
             group.AddSpace(5);
@@ -59,14 +59,14 @@ namespace SeniorCitizenCenterMod {
 
         public void updateCapacity(float targetValue) {
             try {
-                SeniorCitizenCenterMod seniorCitizenCenterMod = SeniorCitizenCenterMod.getInstance();
-                if (seniorCitizenCenterMod == null || seniorCitizenCenterMod.getNursingHomeInitializer() == null) {
+                DormitoryMod seniorCitizenCenterMod = DormitoryMod.getInstance();
+                if (seniorCitizenCenterMod == null || seniorCitizenCenterMod.getDormitoryInitializer() == null) {
                     Logger.logInfo(Logger.LOG_OPTIONS, "OptionsManager.updateCapacity -- Skipping capacity update because a game is not loaded yet");
                     return;
                 }
 
-                NursingHomeInitializer nursingHomeInitializer = SeniorCitizenCenterMod.getInstance().getNursingHomeInitializer();
-                if (nursingHomeInitializer.getLoadedLevel() != NursingHomeInitializer.LOADED_LEVEL_GAME) {
+                DormitoryInitializer dormitoryInitializer = DormitoryMod.getInstance().getDormitoryInitializer();
+                if (dormitoryInitializer.getLoadedLevel() != DormitoryInitializer.LOADED_LEVEL_GAME) {
                     Logger.logInfo(Logger.LOG_OPTIONS, "OptionsManager.updateCapacity -- Skipping capacity update because a game is not loaded yet");
                     return;
                 }
@@ -77,15 +77,15 @@ namespace SeniorCitizenCenterMod {
             Logger.logInfo(Logger.LOG_OPTIONS, "OptionsManager.updateCapacity -- Updating capacity with modifier: {0}", targetValue);
             for (uint index = 0; PrefabCollection<BuildingInfo>.LoadedCount() > index; ++index) {
                 BuildingInfo buildingInfo = PrefabCollection<BuildingInfo>.GetLoaded(index);
-                if (buildingInfo != null && buildingInfo.m_buildingAI is NursingHomeAi) {
-                    ((NursingHomeAi) buildingInfo.m_buildingAI).updateCapacity(targetValue);
+                if (buildingInfo != null && buildingInfo.m_buildingAI is DormitoryAi) {
+                    ((DormitoryAi) buildingInfo.m_buildingAI).updateCapacity(targetValue);
                 }
             }
 
             BuildingManager buildingManager = Singleton<BuildingManager>.instance;
             for (ushort i=0; i < buildingManager.m_buildings.m_buffer.Length; i++) {
-                if (buildingManager.m_buildings.m_buffer[i].Info != null && buildingManager.m_buildings.m_buffer[i].Info.m_buildingAI != null && buildingManager.m_buildings.m_buffer[i].Info.m_buildingAI is NursingHomeAi) {
-                    ((NursingHomeAi) buildingManager.m_buildings.m_buffer[i].Info.m_buildingAI).validateCapacity(i, ref buildingManager.m_buildings.m_buffer[i], true);
+                if (buildingManager.m_buildings.m_buffer[i].Info != null && buildingManager.m_buildings.m_buffer[i].Info.m_buildingAI != null && buildingManager.m_buildings.m_buffer[i].Info.m_buildingAI is DormitoryAi) {
+                    ((DormitoryAi) buildingManager.m_buildings.m_buffer[i].Info.m_buildingAI).validateCapacity(i, ref buildingManager.m_buildings.m_buffer[i], true);
                 }
             }
         }
@@ -115,7 +115,7 @@ namespace SeniorCitizenCenterMod {
             }
 
             try {
-                using (StreamWriter streamWriter = new StreamWriter("SeniorCitizenCenterModOptions.xml")) {
+                using (StreamWriter streamWriter = new StreamWriter("DormitoryModOptions.xml")) {
                     new XmlSerializer(typeof(OptionsManager.Options)).Serialize(streamWriter, options);
                 }
             } catch (Exception e) {
@@ -129,7 +129,7 @@ namespace SeniorCitizenCenterMod {
             OptionsManager.Options options = new OptionsManager.Options();
 
             try {
-                using (StreamReader streamReader = new StreamReader("SeniorCitizenCenterModOptions.xml")) {
+                using (StreamReader streamReader = new StreamReader("DormitoryModOptions.xml")) {
                     options = (OptionsManager.Options) new XmlSerializer(typeof(OptionsManager.Options)).Deserialize(streamReader);
                 }
             } catch (FileNotFoundException ex) {

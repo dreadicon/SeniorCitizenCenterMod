@@ -1,12 +1,12 @@
 ﻿using ColossalFramework.UI;
 using UnityEngine;
 
-namespace SeniorCitizenCenterMod {
+namespace DormitoryMod {
     public class CustomBasePanel : GeneratedScrollPanel {
 
         public override ItemClass.Service service {
             get {
-                return ItemClass.Service.HealthCare;
+                return ItemClass.Service.Education;
             }
         }
 
@@ -19,7 +19,7 @@ namespace SeniorCitizenCenterMod {
 
             if (PanelHelper.LOG_CUSTOM_PANELS) {
                 foreach (UIComponent comp in this.childComponents) {
-                    Logger.logInfo("CustomHealthcarePanel.RefreshPanel -- Child Component Found: {0}", comp);
+                    Logger.logInfo("CustomEducationPanel.RefreshPanel -- Child Component Found: {0}", comp);
                 }
             }
 

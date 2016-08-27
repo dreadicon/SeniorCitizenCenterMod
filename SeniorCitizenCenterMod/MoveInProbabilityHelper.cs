@@ -3,7 +3,7 @@ using ColossalFramework;
 using ColossalFramework.Math;
 using UnityEngine;
 
-namespace SeniorCitizenCenterMod {
+namespace DormitoryMod {
     public class MoveInProbabilityHelper {
         private static readonly bool LOG_CHANCES = false;
 
@@ -15,24 +15,24 @@ namespace SeniorCitizenCenterMod {
         private static readonly float WORKER_MAX_CHANCE_VALUE = 100f;
         private static readonly float MAX_CHANCE_VALUE = AGE_MAX_CHANCE_VALUE + DISTANCE_MAX_CHANCE_VALUE + FAMILY_STATUS_MAX_CHANCE_VALUE + QUALITY_MAX_CHANCE_VALUE + WORKER_MAX_CHANCE_VALUE;
         private static readonly float NO_CHANCE = -(MAX_CHANCE_VALUE * 10);
-        private static readonly float SENIOR_AGE_RANGE = Citizen.AGE_LIMIT_SENIOR - Citizen.AGE_LIMIT_ADULT;
+        //private static readonly float SENIOR_AGE_RANGE = Citizen.AGE_LIMIT_SENIOR - Citizen.AGE_LIMIT_ADULT;
 
-        public static bool checkIfShouldMoveIn(uint[] familyWithSeniors, ref Building buildingData, ref Randomizer randomizer, float operationRadius, int quality, ref NumWorkers numWorkers) {
+        public static bool checkIfShouldMoveIn(uint[] familyWithStudents, ref Building buildingData, ref Randomizer randomizer, float operationRadius, int quality, ref NumWorkers numWorkers) {
             float chanceValue = BASE_CHANCE_VALUE;
 
             Logger.logInfo(LOG_CHANCES, "---------------------------------");
 
             // Age 
-            chanceValue += getAgeChanceValue(familyWithSeniors);
+            //chanceValue += getAgeChanceValue(familyWithStudents);
 
             // Distance
-            chanceValue += getDistanceChanceValue(familyWithSeniors, ref buildingData, operationRadius);
+            chanceValue -= getDistanceChanceValue(familyWithStudents, ref buildingData, operationRadius);
 
             // Family Status
-            chanceValue += getFamilyStatusChanceValue(familyWithSeniors);
+            chanceValue += getFamilyStatusChanceValue(familyWithStudents);
 
             // Wealth
-            chanceValue += getWealthChanceValue(familyWithSeniors, quality);
+            chanceValue += getWealthChanceValue(familyWithStudents, quality);
 
             // Workers
             chanceValue += getWorkersChanceValue(ref numWorkers);
@@ -50,42 +50,42 @@ namespace SeniorCitizenCenterMod {
             return randomValue <= chanceValue;
         }
 
-        private static float getAgeChanceValue(uint[] familyWithSeniors) {
-            float averageSeniorsAge = MoveInProbabilityHelper.getAverageAgeOfSeniors(familyWithSeniors);
-            float chanceValue = ((averageSeniorsAge - (Citizen.AGE_LIMIT_ADULT - 15)) / SENIOR_AGE_RANGE) * AGE_MAX_CHANCE_VALUE;
-            Logger.logInfo(LOG_CHANCES, "MoveInProbabilityHelper.getAgeChanceValue -- Age Chance Value: {0} -- Average Age: {1} -- ", chanceValue, averageSeniorsAge);
-            return Math.Min(chanceValue, AGE_MAX_CHANCE_VALUE);
-        }
+        //private static float getAgeChanceValue(uint[] familyWithStudents) {
+        //    float averageStudentsAge = MoveInProbabilityHelper.getAverageAgeOfStudents(familyWithStudents);
+        //    float chanceValue = ((averageStudentsAge - (Citizen.AGE_LIMIT_ADULT - 15)) / SENIOR_AGE_RANGE) * AGE_MAX_CHANCE_VALUE;
+        //    Logger.logInfo(LOG_CHANCES, "MoveInProbabilityHelper.getAgeChanceValue -- Age Chance Value: {0} -- Average Age: {1} -- ", chanceValue, averageStudentsAge);
+        //    return Math.Min(chanceValue, AGE_MAX_CHANCE_VALUE);
+        //}
 
-        private static float getAverageAgeOfSeniors(uint[] familyWithSeniors) {
-            SeniorCitizenManager seniorCitizenManager = SeniorCitizenManager.getInstance();
-            CitizenManager citizenManager = Singleton<CitizenManager>.instance;
-            int numSeniors = 0;
-            int combinedAge = 0;
-            foreach (uint familyMember in familyWithSeniors) {
-                if (seniorCitizenManager.isSenior(familyMember)) {
-                    numSeniors++;
-                    combinedAge += citizenManager.m_citizens.m_buffer[familyMember].Age;
-                }
-            }
+        //private static float getAverageAgeOfStudents(uint[] familyWithStudents) {
+        //    StudentManager seniorCitizenManager = StudentManager.GetInstance();
+        //    CitizenManager citizenManager = Singleton<CitizenManager>.instance;
+        //    int numStudents = 0;
+        //    int combinedAge = 0;
+        //    foreach (uint familyMember in familyWithStudents) {
+        //        if (seniorCitizenManager.IsStudent(familyMember)) {
+        //            numStudents++;
+        //            combinedAge += citizenManager.m_citizens.m_buffer[familyMember].Age;
+        //        }
+        //    }
 
-            if (numSeniors == 0) {
-                return 0f;
-            }
+        //    if (numStudents == 0) {
+        //        return 0f;
+        //    }
 
-            return combinedAge / (float) numSeniors;
-        }
+        //    return combinedAge / (float) numStudents;
+        //}
 
-        private static float getDistanceChanceValue(uint[] familyWithSeniors, ref Building buildingData, float operationRadius) {
+        private static float getDistanceChanceValue(uint[] familyWithStudents, ref Building buildingData, float operationRadius) {
             // Get the home for the family
-            ushort homeBuilding = MoveInProbabilityHelper.getHomeBuildingIdForFamily(familyWithSeniors);
+            ushort homeBuilding = MoveInProbabilityHelper.getHomeBuildingIdForFamily(familyWithStudents);
             if (homeBuilding == 0) {
                 // homeBuilding should never be 0, but if it is return NO_CHANCE to prevent this family from being chosen 
                 Logger.logError(LOG_CHANCES, "MoveInProbabilityHelper.getDistanceChanceValue -- Home Building was 0 when it shouldn't have been");
                 return NO_CHANCE;
             }
 
-            // Get the distance between the senior's home and this Nursing Home
+            // Get the distance between the senior's home and this Dormitory
             float distance = Vector3.Distance(buildingData.m_position, Singleton<BuildingManager>.instance.m_buildings.m_buffer[homeBuilding].m_position);
 
             // Calulate the chance modifier based on distance
@@ -96,8 +96,8 @@ namespace SeniorCitizenCenterMod {
             return Mathf.Max(DISTANCE_MAX_CHANCE_VALUE * -2f, distanceChanceValue);
         }
 
-        private static ushort getHomeBuildingIdForFamily(uint[] familyWithSeniors) {
-            foreach (uint familyMember in familyWithSeniors) {
+        private static ushort getHomeBuildingIdForFamily(uint[] familyWithStudents) {
+            foreach (uint familyMember in familyWithStudents) {
                 if (familyMember != 0) {
                     return Singleton<CitizenManager>.instance.m_citizens.m_buffer[familyMember].m_homeBuilding;
                 }
@@ -106,14 +106,14 @@ namespace SeniorCitizenCenterMod {
             return 0;
         }
 
-        private static float getFamilyStatusChanceValue(uint[] familyWithSeniors) {
+        private static float getFamilyStatusChanceValue(uint[] familyWithStudents) {
             CitizenManager citizenManager = Singleton<CitizenManager>.instance;
 
             // Determin the family status
             bool hasAdults = false;
             bool hasChildren = false;
-            int numSeniors = 0;
-            foreach (uint familyMember in familyWithSeniors) {
+            int numStudents = 0;
+            foreach (uint familyMember in familyWithStudents) {
                 if (familyMember == 0) {
                     continue;
                 }
@@ -124,7 +124,7 @@ namespace SeniorCitizenCenterMod {
                 } else if (age < Citizen.AGE_LIMIT_ADULT) {
                     hasAdults = true;
                 } else {
-                    numSeniors++;
+                    numStudents++;
                 }
             }
 
@@ -143,16 +143,16 @@ namespace SeniorCitizenCenterMod {
             }
 
             // If more than one senior, 25% less chance for this factor
-            if (numSeniors > 1) {
+            if (numStudents > 1) {
                 chance -= FAMILY_STATUS_MAX_CHANCE_VALUE * 0.25f;
             }
 
-            Logger.logInfo(LOG_CHANCES, "MoveInProbabilityHelper.getFamilyStatusChanceValue -- Family Chance Value: {0} -- hasAdults: {1} -- hasChildren: {2}, -- numSeniors: {3}", chance, hasAdults, hasChildren, numSeniors);
+            Logger.logInfo(LOG_CHANCES, "MoveInProbabilityHelper.getFamilyStatusChanceValue -- Family Chance Value: {0} -- hasAdults: {1} -- hasChildren: {2}, -- numStudents: {3}", chance, hasAdults, hasChildren, numStudents);
             return chance;
         }
 
-        private static float getWealthChanceValue(uint[] familyWithSeniors, int quality) {
-            Citizen.Wealth wealth = getFamilyWealth(familyWithSeniors);
+        private static float getWealthChanceValue(uint[] familyWithStudents, int quality) {
+            Citizen.Wealth wealth = getFamilyWealth(familyWithStudents);
             float chance = NO_CHANCE;
             switch (quality) {
                 case 0:
@@ -173,13 +173,13 @@ namespace SeniorCitizenCenterMod {
                     // Quality 1's should be mainly for Low Wealth citizens, but not impossible for medium
                     switch (wealth) {
                         case Citizen.Wealth.High:
-                            chance = QUALITY_MAX_CHANCE_VALUE * -2f;
+                            chance = QUALITY_MAX_CHANCE_VALUE * -1f;
                             break;
                         case Citizen.Wealth.Medium:
-                            chance = QUALITY_MAX_CHANCE_VALUE * -0.25f;
+                            chance = QUALITY_MAX_CHANCE_VALUE * -0.1f;
                             break;
                         case Citizen.Wealth.Low:
-                            chance = QUALITY_MAX_CHANCE_VALUE * 1f;
+                            chance = QUALITY_MAX_CHANCE_VALUE * 1.5f;
                             break;
                     }
                     break;
@@ -187,7 +187,7 @@ namespace SeniorCitizenCenterMod {
                     // Quality 2's should be for both medium and low wealth citizens
                     switch (wealth) {
                         case Citizen.Wealth.High:
-                            chance = QUALITY_MAX_CHANCE_VALUE * -1f;
+                            chance = QUALITY_MAX_CHANCE_VALUE * -0.5f;
                             break;
                         case Citizen.Wealth.Medium:
                             chance = QUALITY_MAX_CHANCE_VALUE * 0.5f;
@@ -245,13 +245,13 @@ namespace SeniorCitizenCenterMod {
             return chance;
         }
 
-        private static Citizen.Wealth getFamilyWealth(uint[] familyWithSeniors) {
+        private static Citizen.Wealth getFamilyWealth(uint[] familyWithStudents) {
             CitizenManager citizenManager = Singleton<CitizenManager>.instance;
             
             // Get the average wealth of all adults and seniors in the house
             int total = 0;
             int numCounted = 0;
-            foreach (uint familyMember in familyWithSeniors) {
+            foreach (uint familyMember in familyWithStudents) {
                 if (familyMember != 0) {
                     if (citizenManager.m_citizens.m_buffer[familyMember].Age > Citizen.AGE_LIMIT_YOUNG) {
                         total += (int) citizenManager.m_citizens.m_buffer[familyMember].WealthLevel;

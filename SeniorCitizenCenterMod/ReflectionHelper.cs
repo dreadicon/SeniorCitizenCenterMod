@@ -1,5 +1,5 @@
 ﻿
-namespace SeniorCitizenCenterMod {
+namespace DormitoryMod {
     public class ReflectionHelper {
 
         /* Used for debugging private values of some of the Managers

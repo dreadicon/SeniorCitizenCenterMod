@@ -1,9 +1,9 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SeniorCitizenCenterMod {
+namespace DormitoryMod {
     internal static class Logger {
-        private static readonly string Prefix = "SeniorCitizenCenterMod: ";
+        private static readonly string Prefix = "DormitoryMod: ";
 
         public static readonly bool LOG_OPTIONS = true;
         public static readonly bool LOG_CAPACITY_MANAGEMENT = true;
