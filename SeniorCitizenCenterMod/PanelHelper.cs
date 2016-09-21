@@ -105,7 +105,7 @@ namespace DormitoryMod {
         }
 
         public static void reset() {
-            // Reset the values needed for panel initilization, not everything needs to be re-initilized, but the healthcare menu does
+            // Reset the values needed for panel initilization, not everything needs to be re-initilized, but the education menu does
             replacedEducationGroupPanel = false;
         }
 
@@ -114,18 +114,28 @@ namespace DormitoryMod {
             // Get the Tab Strip, but fetching it before it's initlized can throw an exception
             UITabstrip strip = null;
             try {
-                strip = ToolsModifierControl.mainToolbar?.component as UITabstrip;
+                if (ToolsModifierControl.mainToolbar != null)
+                    strip = ToolsModifierControl.mainToolbar.component as UITabstrip;
             } catch {
                 // Do nothing
             }
 
             // Get the other needed components
-            UIComponent education = strip?.Find(CustomEducationGroupPanel.EDUCATION_NAME);
-            UIComponent healthcarePanelComp = strip?.tabPages?.Find(CustomEducationGroupPanel.EDUCATION_PANEL_NAME);
-            EducationGroupPanel healthcareGroupPanel = healthcarePanelComp?.GetComponent<EducationGroupPanel>();
+            UIComponent education = null;
+            UIComponent educationPanelComp = null;
+            EducationGroupPanel educationGroupPanel = null;
+
+            if (strip != null)
+            {
+                education = strip.Find(CustomEducationGroupPanel.EDUCATION_NAME);
+                if(strip.tabPages != null)
+                    educationPanelComp = strip.tabPages.Find(CustomEducationGroupPanel.EDUCATION_PANEL_NAME);
+                if(educationPanelComp != null)
+                    educationGroupPanel = educationPanelComp.GetComponent<EducationGroupPanel>();
+            }
 
             // Ensure the Education Components are available before initilization
-            if (education == null || healthcarePanelComp == null || healthcareGroupPanel == null || !education.isActiveAndEnabled || !education.isVisible) {
+            if (education == null || educationPanelComp == null || educationGroupPanel == null || !education.isActiveAndEnabled || !education.isVisible) {
                 Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Waiting to initilize Education Menu because the components aren't ready");
                 return false;
             }
@@ -134,19 +144,19 @@ namespace DormitoryMod {
             Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Initilizing Education Menu");
 
             // Check the Education Group Panel and replace it with a Custom Education Group Panel
-            if (!(healthcareGroupPanel is CustomEducationGroupPanel)) {
+            if (!(educationGroupPanel is CustomEducationGroupPanel)) {
                 if (replacedEducationGroupPanel) {
                     Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Waiting to continue initilization of the Education Menu because the Custom Panel isn't fully initilized yet");
                     return false;
                 }
 
                 // Destroy the existing group panel
-                Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Destroying the existing Education Group Panel: {0}", healthcareGroupPanel);
-                UnityEngine.Object.Destroy(healthcareGroupPanel);
+                Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Destroying the existing Education Group Panel: {0}", educationGroupPanel);
+                UnityEngine.Object.Destroy(educationGroupPanel);
 
                 // Create a new custom group panel
                 Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Creating the new Custom Education Group Panel");
-                healthcarePanelComp.gameObject.AddComponent(typeof (CustomEducationGroupPanel));
+                educationPanelComp.gameObject.AddComponent(typeof (CustomEducationGroupPanel));
 
                 // Mark this step as complete and bail to give this step a chance to complete
                 replacedEducationGroupPanel = true;
@@ -155,7 +165,7 @@ namespace DormitoryMod {
 
             // Attempt initilization of the Custom Education Group Panel -- Will take multiple attempts to completely initilize
             Logger.logInfo(LOG_CUSTOM_PANELS, "PanelHelper.initCustomEducationGroupPanel -- Attempting initilization of the Custom Education Group Panel");
-            return ((CustomEducationGroupPanel) healthcareGroupPanel).initDormitories();
+            return ((CustomEducationGroupPanel) educationGroupPanel).initDormitories();
             
         }
         

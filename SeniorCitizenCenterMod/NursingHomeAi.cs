@@ -18,7 +18,7 @@ namespace DormitoryMod {
 
         private static readonly float[] QUALITY_VALUES = { -50, -25, 10, 40, 70, 125 };
 
-        // TODO: Workout how to have Dormitories Coverage display separate from Health Care
+        // TODO: Workout how to have Dormitories Coverage display separate from Education
         //private static readonly ItemClass DORMITORY_ITEM_CLASS = DormitoryAi.initNewItemClass();
 
         private Randomizer randomizer = new Randomizer(97);
@@ -526,10 +526,12 @@ namespace DormitoryMod {
             //    return;
 
             // TODO: Ignore Citizen Moving Operations?
-            //if (emptyHomeCount != 0 && (buildingData.m_problems & Notification.Problem.MajorProblem) == Notification.Problem.None && Singleton<SimulationManager>.instance.m_randomizer.Int32(5U) == 0) {
+            //if (emptyHomeCount != 0 && (buildingData.m_problems & Notification.Problem.MajorProblem) == Notification.Problem.None && Singleton<SimulationManager>.instance.m_randomizer.Int32(5U) == 0)
+            //{
             //    TransferManager.TransferReason homeReason = this.GetHomeReason(buildingID, ref buildingData, ref Singleton<SimulationManager>.instance.m_randomizer);
             //    if (homeReason != TransferManager.TransferReason.None)
-            //        Singleton<TransferManager>.instance.AddIncomingOffer(homeReason, new TransferManager.TransferOffer() {
+            //        Singleton<TransferManager>.instance.AddIncomingOffer(homeReason, new TransferManager.TransferOffer()
+            //        {
             //            Priority = Mathf.Max(1, emptyHomeCount * 8 / homeCount),
             //            Building = buildingID,
             //            Position = buildingData.m_position,
@@ -789,8 +791,8 @@ namespace DormitoryMod {
             Logger.logInfo(LOG_RANGE, "DormitoryAi.GetPlacementInfoMode -- m_ignoreBuilding: {0}", ReflectionHelper.GetInstanceField(typeof(CoverageManager), Singleton<CoverageManager>.instance, "m_ignoreBuilding"));
             */
 
-            /* TODO: Dormitories should be highlighted separate from HealthCare and DeathCare
-            // Only handle range when placing a Dormitory, not when looking at health info
+            /* TODO: Dormitories should be highlighted separate from Education
+            // Only handle range when placing a Dormitory, not when looking at education info
             BuildingInfo buildingInfo = (BuildingInfo) ReflectionHelper.GetInstanceField(typeof (CoverageManager), Singleton<CoverageManager>.instance, "m_buildingInfo");
             if (buildingInfo != null && !(buildingInfo.m_buildingAI is DormitoryAi)) {
                 return 0.0f;
@@ -1083,7 +1085,7 @@ namespace DormitoryMod {
             return true;
         }
 
-        /* TODO: Workout how to have Dormitories Coverage display separate from Health Care
+        /* TODO: Workout how to have Dormitories Coverage display separate from Education
         private static ItemClass initNewItemClass() {
             ItemClass newDormitoryItemClass = new ItemClass();
             newDormitoryItemClass.m_level = ItemClass.Level.Level2;

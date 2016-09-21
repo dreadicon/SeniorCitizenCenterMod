@@ -57,14 +57,14 @@ namespace DormitoryMod {
 
         public override void OnLevelUnloading() {
             base.OnLevelUnloading();
-            this.dormitoryInitializer?.OnLevelUnloading();
+            this.dormitoryInitializer.OnLevelUnloading();
         }
 
         public override void OnLevelLoaded(LoadMode mode) {
             Logger.logInfo(LOG_BASE, "DormitoryMod Level Loaded: {0}", mode);
             base.OnLevelLoaded(mode);
             if(mode == LoadMode.LoadGame) {
-                this.dormitoryInitializer?.OnLevelWasLoaded(DormitoryInitializer.LOADED_LEVEL_GAME);
+                this.dormitoryInitializer.OnLevelWasLoaded(DormitoryInitializer.LOADED_LEVEL_GAME);
             }
         }
 
@@ -85,7 +85,7 @@ namespace DormitoryMod {
             Logger.logInfo(Logger.LOG_OPTIONS, "Save Data: {0} -- {1}", id, data);
         }
 
-        public IManagers managers { get; }
+        public IManagers managers { get; set; }
         public string[] EnumerateData() { return null; }
         public void EraseData(string id) { }
         public bool LoadGame(string saveName) { return false; }

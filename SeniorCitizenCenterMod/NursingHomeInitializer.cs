@@ -14,7 +14,7 @@ namespace DormitoryMod {
         public const int LOADED_LEVEL_GAME = 6;
         public const int LOADED_LEVEL_ASSET_EDITOR = 19;
 
-        private const String MEDICAL_CLINIC_NAME = "Medical Clinic";
+        private const String COLLEGE_NAME = "College";
 
         private static readonly Queue<IEnumerator> ACTION_QUEUE = new Queue<IEnumerator>();
         private static readonly object QUEUE_LOCK = new object();
@@ -75,7 +75,7 @@ namespace DormitoryMod {
             }
 
             // Wait for the Medical Clinic or other HospitalAI Building to load since all new Dormitories will copy its values
-            BuildingInfo medicalBuildingInfo = this.findMedicalBuildingInfo();
+            BuildingInfo medicalBuildingInfo = this.findEducationBuildingInfo();
             if (medicalBuildingInfo == null) {
                 this.attemptingInitialization = 0;
                 return;
@@ -109,11 +109,11 @@ namespace DormitoryMod {
             this.numTimesSearchedForMedicalClinic = 0;
         }
 
-        private BuildingInfo findMedicalBuildingInfo() {
+        private BuildingInfo findEducationBuildingInfo() {
             // First check for the known Medical Clinic
-            BuildingInfo medicalBuildingInfo = PrefabCollection<BuildingInfo>.FindLoaded(MEDICAL_CLINIC_NAME);
-            if (medicalBuildingInfo != null) {
-                return medicalBuildingInfo;
+            BuildingInfo educationBuildingInfo = PrefabCollection<BuildingInfo>.FindLoaded(COLLEGE_NAME);
+            if (educationBuildingInfo != null) {
+                return educationBuildingInfo;
             }
 
             // Try 5 times to search for the Medical Clinic before giving up

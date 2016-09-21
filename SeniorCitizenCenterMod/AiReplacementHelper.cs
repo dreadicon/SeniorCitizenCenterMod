@@ -50,17 +50,22 @@ namespace DormitoryMod {
             return true;
         }
 
-        private void copyBuildingAIAttributes<T>(BuildingAI from, T to, BuildingAI fallback) {
-            FieldInfo[] fieldInfos = typeof(T).BaseType?.GetFields();
-            if (fieldInfos == null) {
-                return;
-            }
+        private void copyBuildingAIAttributes<T>(BuildingAI from, T to, BuildingAI fallback)
+        {
+            var baseType = typeof(T).BaseType;
+            if (baseType != null)
+            {
+                FieldInfo[] fieldInfos = baseType.GetFields();
+                if (fieldInfos == null) {
+                    return;
+                }
 
-            foreach (FieldInfo fieldInfo in fieldInfos) {
-                try {
-                    fieldInfo.SetValue(to, fieldInfo.GetValue(@from));
-                } catch (ArgumentException e) {
-                    fieldInfo.SetValue(to, fieldInfo.GetValue(@fallback));
+                foreach (FieldInfo fieldInfo in fieldInfos) {
+                    try {
+                        fieldInfo.SetValue(to, fieldInfo.GetValue(@from));
+                    } catch (ArgumentException e) {
+                        fieldInfo.SetValue(to, fieldInfo.GetValue(@fallback));
+                    }
                 }
             }
         }
